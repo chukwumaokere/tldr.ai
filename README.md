@@ -10,3 +10,4 @@
 8) When you run `vagrant ssh` you MAY need to run this in the shell `eval "$(/home/vagrant/anaconda3/bin/conda shell.bash hook)"` if you get `No module named fastai` or `conda list` or any other conda functions don't seem to work. This will start your shell in the conda environment which is needed to use fastai functions.
 9) So that its not annoying, you can add this line `eval "$(/home/vagrant/anaconda3/bin/conda shell.bash hook)"` to `/home/vagrant/.bashrc` so it automatically puts you in the conda environment when you ssh in
 10) Feel free to also add `cd /vagrant/` after that line too, to start in `/vagrant/`
+11) To make it easier to execute python scripts using python3.7, you can also add `alias python=python3.7` to your `.bashrc` file so you can use `python testfastai.py` to execute scripts faster.
