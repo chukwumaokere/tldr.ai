@@ -131,3 +131,7 @@ def parallel_trees(m, fn, n_jobs=8):
 
 df_raw = pd.read_feather('tmp/raw')
 df, y = proc_df(df_raw, 'SalePrice')
+
+m = RandomForestRegressor(n_jobs=-1)
+m.fit(df, y)
+m.score(df, y)
