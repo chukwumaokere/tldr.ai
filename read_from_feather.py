@@ -130,7 +130,7 @@ def parallel_trees(m, fn, n_jobs=8):
         return list(ProcessPoolExecutor(n_jobs).map(fn, m.estimators_))
 
 df_raw = pd.read_feather('tmp/raw')
-df, y = proc_df(df_raw, 'SalePrice')
+df, y, nas = proc_df(df_raw, 'SalePrice')
 
 m = RandomForestRegressor(n_jobs=-1)
 m.fit(df, y)
