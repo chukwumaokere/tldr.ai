@@ -1,10 +1,12 @@
 from fastai.imports import *
-#from fastai.structured import *
-#from structured import *
 #from pandas_summary import DataFrameSummary
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier, export_graphviz
+import IPython
 from IPython.display import display
 import os
+#conda install -c anaconda graphviz python-graphviz
+import graphviz
 
 import pandas as pd 
 from pandas.api.types import *
@@ -132,14 +134,14 @@ def combine_date(years, months=1, days=1, weeks=None, hours=None, minutes=None,
     return sum(np.asarray(v, dtype=t) for t, v in zip(types, vals)
                if v is not None)
 
-def draw_tree(t, df, size=10, ratio=0.6, precision=0):
+def draw_tree(t, df, size=10, ratio=0.6, precision=0, output_file=None):
     """ Draws a representation of a random forest in IPython.
     Parameters:
     -----------
     t: The tree you wish to draw
     df: The data used to train the tree. This is used to get the names of the features.
     """
-    s=export_graphviz(t, out_file=None, feature_names=df.columns, filled=True,
+    s=export_graphviz(t, out_file=output_file, feature_names=df.columns, filled=True,
                       special_characters=True, rotate=True, precision=precision)
     IPython.display.display(graphviz.Source(re.sub('Tree {',
        f'Tree {{ size={size}; ratio={ratio}', s)))
@@ -175,29 +177,13 @@ else:
     add_datepart(df_raw, 'saledate')
     train_cats(df_raw)
     df_raw.UsageBand.cat.set_categories(['High', 'Medium', 'Low'], ordered=True, inplace=True)
+    #To make raw feather
+    #conda install feather-format -c conda-forge
+    os.makedirs('tmp', exist_ok=True)
+    df_raw.to_feather('tmp/raw')
 
 #display_all(df_raw)
 #display_all(df_raw.isnull().sum().sort_index()/len(df_raw))
-#os.makedirs('tmp', exist_ok=True)
-#df_raw.to_feather('tmp/raw')
-#conda install feather-format -c conda-forge
-
-'''
-m = RandomForestRegressor(n_jobs=-1)
-m.fit(df_raw.drop('SalePrice', axis=1), df_raw.SalePrice)
-'''
-'''
-
-
-add_datepart(df_raw, 'saledate')
-print(df_raw.columns)
-m = RandomForestRegressor(n_jobs=1)
-m.fit(df_raw.drop('SalePrice', axis=1), df_raw.SalePrice)
-'''
-'''
-
-#df_raw.saleYear.head()
-#display_all(df_raw.tail().transpose())
 
 '''
 df, y, nas = proc_df(df_raw, 'SalePrice')
@@ -207,10 +193,28 @@ n_trn = len(df) - n_valid
 raw_train, raw_valid = split_vals(df_raw, n_trn)
 X_train, X_valid = split_vals(df, n_trn)
 y_train, y_valid = split_vals(y, n_trn)
-
+'''
+'''
 m = RandomForestRegressor(n_jobs=-1)
 m.fit(df, y)
 m.score(df, y)
+'''
 
-#%time m.fit(X_train, y_train)
+df_trn, y_trn, nas = proc_df(df_raw, 'SalePrice', subset=30000)
+X_train, X_valid = split_vals(df_trn, 20000)
+y_train, y_valid = split_vals(y_trn, 20000)
+
+#m = RandomForestRegressor(n_estimators=1, max_depth=3, bootstrap=False, n_jobs=-1) #max depth of 3 gives validation r^2 of .38 which isn't good. So we need deeper tree
+#m = RandomForestRegressor(n_estimators=1, bootstrap=False, n_jobs=-1) #each estimator is a tree, so this is only one tree, we should try adding more trees
+m = RandomForestRegressor(n_estimators = 10, n_jobs=-1)
+m.fit(X_train, y_train)
+
 print_score(m)
+
+preds = np.stack([t.predict(X_valid) for t in m.estimators_])
+preds[:, 0], np.mean(preds[:,0]), y_valid[0]
+
+print(preds)
+print(preds.shape)
+
+#draw_tree(m.estimators_[0], df_trn, precision=3, output_file="test.txt")
